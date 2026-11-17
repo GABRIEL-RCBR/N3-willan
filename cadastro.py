@@ -1,19 +1,9 @@
-"""Sistema de cadastro de clientes com persistência em JSON.
-
-Funcionalidades:
-    - Incluir, alterar e excluir clientes
-    - Persistência dos dados em arquivo JSON
-    - Pesquisa por campos do tipo texto (nome, email, cidade)
-    - Impressão de listas ordenadas por dois campos diferentes (nome e idade)
-"""
-
 import json
 import os
 import unicodedata
 
 ARQUIVO_PADRAO = "clientes.json"
 
-# Campos do registro: nome -> tipo
 CAMPOS = {
     "nome": str,
     "email": str,
@@ -24,31 +14,27 @@ CAMPOS_TEXTO = [campo for campo, tipo in CAMPOS.items() if tipo is str]
 
 
 def normalizar(texto):
-    """Remove acentos e converte para minúsculas, para comparação/pesquisa."""
     sem_acento = unicodedata.normalize("NFKD", texto)
     sem_acento = "".join(c for c in sem_acento if not unicodedata.combining(c))
     return sem_acento.casefold().strip()
 
 
 class Cadastro:
-    """Gerencia os registros e a persistência no arquivo JSON."""
-
     def __init__(self, arquivo=ARQUIVO_PADRAO):
         self.arquivo = arquivo
         self.registros = []
         self.proximo_id = 1
         self.carregar()
 
-    # ---------- Persistência ----------
     def carregar(self):
         if not os.path.exists(self.arquivo):
             return
         with open(self.arquivo, "r", encoding="utf-8") as f:
             conteudo = f.read().strip()
-        if not conteudo:  # arquivo vazio: começa sem registros
+        if not conteudo:
             return
         dados = json.loads(conteudo)
-        if isinstance(dados, list):  # aceita também uma lista simples
+        if isinstance(dados, list):
             dados = {"registros": dados}
         self.registros = dados.get("registros", [])
         self.proximo_id = dados.get(
@@ -60,12 +46,10 @@ class Cadastro:
         temporario = self.arquivo + ".tmp"
         with open(temporario, "w", encoding="utf-8") as f:
             json.dump(dados, f, ensure_ascii=False, indent=2)
-        os.replace(temporario, self.arquivo)  # gravação atômica
+        os.replace(temporario, self.arquivo)
 
-    # ---------- Validação ----------
     @staticmethod
     def validar(dados, parcial=False):
-        """Valida e converte os campos. Em modo parcial, só os informados."""
         validados = {}
         for campo, tipo in CAMPOS.items():
             if campo not in dados:
@@ -87,7 +71,6 @@ class Cadastro:
             validados[campo] = valor
         return validados
 
-    # ---------- CRUD ----------
     def buscar_por_id(self, id_registro):
         for registro in self.registros:
             if registro["id"] == id_registro:
@@ -117,12 +100,7 @@ class Cadastro:
         self.salvar()
         return registro
 
-    # ---------- Pesquisa ----------
     def pesquisar(self, termo, campo=None):
-        """Pesquisa parcial, sem diferenciar maiúsculas/acentos.
-
-        Se `campo` for None, procura em todos os campos de texto.
-        """
         if campo is not None and campo not in CAMPOS_TEXTO:
             raise ValueError(f"Campo de texto inválido: {campo}")
         campos = [campo] if campo else CAMPOS_TEXTO
@@ -132,7 +110,6 @@ class Cadastro:
             if any(termo_n in normalizar(r[c]) for c in campos)
         ]
 
-    # ---------- Ordenação ----------
     def listar_ordenado(self, campo, decrescente=False):
         if campo not in CAMPOS and campo != "id":
             raise ValueError(f"Campo inválido: {campo}")
@@ -143,8 +120,6 @@ class Cadastro:
 
         return sorted(self.registros, key=chave, reverse=decrescente)
 
-
-# =================== Interface de linha de comando ===================
 
 def imprimir_tabela(registros, titulo=None):
     if titulo:
