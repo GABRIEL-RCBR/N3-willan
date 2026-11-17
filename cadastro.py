@@ -44,7 +44,12 @@ class Cadastro:
         if not os.path.exists(self.arquivo):
             return
         with open(self.arquivo, "r", encoding="utf-8") as f:
-            dados = json.load(f)
+            conteudo = f.read().strip()
+        if not conteudo:  # arquivo vazio: começa sem registros
+            return
+        dados = json.loads(conteudo)
+        if isinstance(dados, list):  # aceita também uma lista simples
+            dados = {"registros": dados}
         self.registros = dados.get("registros", [])
         self.proximo_id = dados.get(
             "proximo_id", max((r["id"] for r in self.registros), default=0) + 1
