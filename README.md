@@ -22,7 +22,8 @@ python3 cadastro.py
 ## Testes
 
 ```bash
-python3 -m unittest -v
+pip install -r requirements.txt
+python3 -m pytest -v
 ```
 
 ## Formato do arquivo JSON
